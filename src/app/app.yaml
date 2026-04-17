@@ -1,0 +1,12 @@
+command:
+  - "streamlit"
+  - "run"
+  - "app.py"
+
+env:
+  - name: DATABRICKS_WAREHOUSE_ID
+    value: "your-dev-warehouse-id"
+  - name: DATABRICKS_CATALOG
+    value: "main"
+  - name: DATABRICKS_SCHEMA
+    value: "fraud_detection_dev"
