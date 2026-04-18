@@ -1,0 +1,10 @@
+streamlit
+mlflow
+pandas
+numpy
+torch
+transformers
+sentence-transformers
+bitsandbytes
+accelerate
+faiss-cpu

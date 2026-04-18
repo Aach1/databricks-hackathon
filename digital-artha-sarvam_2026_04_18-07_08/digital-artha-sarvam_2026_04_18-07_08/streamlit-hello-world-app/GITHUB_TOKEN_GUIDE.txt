@@ -1,0 +1,127 @@
+
+╔══════════════════════════════════════════════════════════════╗
+║       🔑 GET YOUR GITHUB TOKEN - Step by Step                ║
+║       GitHub Username: Aach1                                 ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 STEP-BY-STEP INSTRUCTIONS:
+================================================================
+
+1️⃣  LOG IN TO GITHUB
+   → Go to: https://github.com/login
+   → Sign in with your credentials
+
+2️⃣  GO TO SETTINGS
+   → Click your profile picture (top-right corner)
+   → Click "Settings" from dropdown menu
+
+3️⃣  NAVIGATE TO DEVELOPER SETTINGS
+   → Scroll down the left sidebar
+   → Click "Developer settings" (at the bottom)
+
+4️⃣  PERSONAL ACCESS TOKENS
+   → Click "Personal access tokens"
+   → Click "Tokens (classic)"
+
+5️⃣  GENERATE NEW TOKEN
+   → Click "Generate new token" button
+   → Select "Generate new token (classic)"
+   
+6️⃣  CONFIGURE TOKEN
+   Note: "Databricks Rakshak Token"
+   Expiration: 90 days (or "No expiration" for permanent)
+   
+   Select scopes (IMPORTANT!):
+   ✅ repo (check ALL repo boxes)
+      ✅ repo:status
+      ✅ repo_deployment
+      ✅ public_repo
+      ✅ repo:invite
+      ✅ security_events
+
+7️⃣  GENERATE & COPY
+   → Scroll down and click "Generate token"
+   → 🔴 COPY THE TOKEN IMMEDIATELY!
+   → It looks like: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   → You won't see it again after leaving the page!
+
+================================================================
+
+🚀 DIRECT LINK TO CREATE TOKEN:
+================================================================
+→ https://github.com/settings/tokens/new
+
+Or manually navigate:
+→ https://github.com/settings/tokens
+
+================================================================
+
+✅ ONCE YOU HAVE YOUR TOKEN:
+================================================================
+
+Your GitHub URL will be:
+https://YOUR_TOKEN@github.com/Aach1/databricks-hackathon.git
+
+Example with fake token:
+https://ghp_abc123xyz789def456@github.com/Aach1/databricks-hackathon.git
+
+================================================================
+
+📝 READY-TO-USE COMMANDS (once you have token):
+================================================================
+
+cd /Workspace/Users/mc230041001@iiti.ac.in/databricks_apps/digital-artha-sarvam_2026_04_18-07_08/streamlit-hello-world-app
+
+git init
+git config user.name "Aach1"
+git config user.email "your.email@example.com"
+git add .
+git commit -m "Add Rakshak Financial Intelligence Platform"
+git remote add origin https://YOUR_TOKEN@github.com/Aach1/databricks-hackathon.git
+git branch -M main
+git push -u origin main
+
+Replace YOUR_TOKEN with the actual token you copied!
+
+================================================================
+
+🎯 AUTOMATED SCRIPT (Even Easier!):
+================================================================
+
+bash push_to_github.sh
+
+When it asks for:
+- GitHub username: Aach1
+- Name: Your name
+- Email: Your email
+- Token: Paste the token you just copied
+
+================================================================
+
+⚠️  IMPORTANT SECURITY NOTES:
+================================================================
+• NEVER commit your token in code files!
+• Keep your token secret like a password
+• If token is exposed, delete it and generate a new one
+• Store it securely (password manager recommended)
+• For this project, you only need it once for initial push
+
+================================================================
+
+❓ TROUBLESHOOTING:
+================================================================
+
+Q: "Token not working?"
+A: Make sure you selected "repo" scope when creating it
+
+Q: "Can't find Developer settings?"
+A: It's at the very bottom of the Settings left sidebar
+
+Q: "Token expired?"
+A: Generate a new one following the same steps
+
+Q: "Authentication failed?"
+A: Check that you're using the correct username (Aach1)
+   and the token has repo permissions
+
+================================================================

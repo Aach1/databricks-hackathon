@@ -1,0 +1,102 @@
+
+╔══════════════════════════════════════════════════════════════╗
+║      🚀 PUSH TO GITHUB: databricks-hackathon                 ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 PREREQUISITES:
+================================================================
+1. ✅ GitHub repo "databricks-hackathon" should exist
+2. ✅ Get your GitHub Personal Access Token:
+   → https://github.com/settings/tokens
+   → Generate new token (classic)
+   → Select "repo" scope
+   → Copy the token!
+
+================================================================
+
+🎯 METHOD 1: RUN AUTOMATED SCRIPT (Easiest!)
+================================================================
+
+cd /Workspace/Users/mc230041001@iiti.ac.in/databricks_apps/digital-artha-sarvam_2026_04_18-07_08/streamlit-hello-world-app
+
+bash push_to_github.sh
+
+# The script will ask for:
+# - Your GitHub username
+# - Your name
+# - Your email  
+# - Your GitHub token
+# Then it will automatically push everything!
+
+================================================================
+
+🎯 METHOD 2: MANUAL COMMANDS (Copy-paste line by line)
+================================================================
+
+# 1. Navigate to app directory
+cd /Workspace/Users/mc230041001@iiti.ac.in/databricks_apps/digital-artha-sarvam_2026_04_18-07_08/streamlit-hello-world-app
+
+# 2. Initialize Git
+git init
+
+# 3. Configure Git (REPLACE WITH YOUR INFO)
+git config user.name "Your Name"
+git config user.email "your.email@example.com"
+
+# 4. Add all files
+git add .
+
+# 5. Check what will be committed
+git status
+
+# 6. Commit
+git commit -m "Add Rakshak Financial Intelligence Platform
+
+- Fraud Detection with XGBoost + DQN
+- Credit Eligibility (banking behavior)
+- Multilingual AI Assistant (Sarvam-1 RAG)
+- Support for 10+ Indian languages"
+
+# 7. Add remote (REPLACE YOUR_USERNAME and YOUR_TOKEN)
+git remote add origin https://YOUR_TOKEN@github.com/YOUR_USERNAME/databricks-hackathon.git
+
+# 8. Push to GitHub
+git branch -M main
+git push -u origin main
+
+================================================================
+
+✅ AFTER SUCCESSFUL PUSH:
+================================================================
+Your repo will be at:
+🔗 https://github.com/YOUR_USERNAME/databricks-hackathon
+
+It will contain:
+📁 app.py (28 KB) - Main Streamlit app
+📁 requirements.txt - All dependencies
+📁 README.md - Complete documentation
+📁 .gitignore - Git ignore rules
+📁 app.yaml - App configuration
+📁 push_to_github.sh - This script
+📁 Other backup files (optional)
+
+================================================================
+
+🔄 TO UPDATE LATER (after changes):
+================================================================
+cd /Workspace/Users/mc230041001@iiti.ac.in/databricks_apps/digital-artha-sarvam_2026_04_18-07_08/streamlit-hello-world-app
+
+git add .
+git commit -m "Update: describe your changes here"
+git push
+
+================================================================
+
+❗ IMPORTANT NOTES:
+================================================================
+• Keep your GitHub token SECRET (never commit it in code!)
+• If repo doesn't exist, create it first on GitHub
+• Make sure repo is named "databricks-hackathon"
+• Your token needs "repo" permissions
+
+================================================================
