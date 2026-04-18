@@ -447,15 +447,12 @@ Databricks Platform
 
 ## 👥 Team
 
-[Insert team members and roles]
+Abhiraj Kumar
+Harshith Jay Surya Ganji
 
 ---
 
-## 📧 Contact
 
-For questions or partnership inquiries:
-- **Email**: [contact@rakshak-artha.io]
-- **GitHub**: [repository URL]
 
 ---
 
