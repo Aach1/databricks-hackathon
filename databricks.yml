@@ -1,0 +1,27 @@
+bundle:
+  name: fraud-detection-system
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: "Unity Catalog name for storing data and models"
+    default: "main"
+  schema:
+    description: "Schema name for the application"
+    default: "fraud_detection"
+  warehouse_id:
+    description: "ID of the SQL Warehouse to use for the application"
+    default: "your-warehouse-id"
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      profile: DEFAULT
+    variables:
+      catalog: "main"
+      schema: "fraud_detection_dev"
+      warehouse_id: "your-dev-warehouse-id"

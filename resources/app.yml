@@ -1,0 +1,6 @@
+resources:
+  apps:
+    fraud_app:
+      name: fraud-detection-${bundle.target}
+      description: "Frontend interface for the Hybrid Fraud Detection System"
+      source_code_path: ../src/app

@@ -367,6 +367,28 @@ Databricks Platform
 
 ---
 
+## 📁 Repository Structure
+
+```
+databricks-hackathon/
+├── databricks.yml          # Databricks Asset Bundle definition
+├── resources/
+│   ├── app.yml              # Databricks App resource (Streamlit frontend)
+│   └── jobs.yml              # Jobs: synthetic data generation + model training
+└── src/
+    ├── app/                  # Streamlit frontend (Rakshak + Artha UI)
+    │   ├── app.py
+    │   ├── app.yaml
+    │   └── requirements.txt
+    ├── jobs/                 # PySpark data generation + XGBoost/DQN training
+    │   ├── data_gen.py
+    │   └── train.py
+    └── tests/
+        └── test_endpoints.py # Manual test script for the model-serving endpoints
+```
+
+---
+
 ## 🚧 Challenges Overcome
 
 ### **1. Massive LLM Footprints**
@@ -441,7 +463,7 @@ Databricks Platform
 
 ## 📝 License
 
-[Add your license here—MIT, Apache 2.0, etc.]
+No license has been chosen yet for this project.
 
 ---
 
