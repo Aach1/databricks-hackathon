@@ -1,369 +1,55 @@
-# Rakshak-Artha: Dual-Engine FinTech Platform for Rural India 🛡️💰
+# Rakshak-Artha: Fraud Detection & Credit Scoring for Rural India 🛡️💰
 
-> Protecting wealth in real-time, unlocking micro-credit through digital footprints, and communicating in native languages.
+> Protecting wealth in real-time and unlocking micro-credit through digital footprints — communicated in native languages.
+
+A Databricks-hosted Streamlit app with three tools: a UPI fraud-risk scorer, a banking-behavior credit-eligibility scorer, and a multilingual AI assistant that answers questions about UPI and fraud in 10+ Indian languages.
+
+**Live demo:** https://digital-artha-sarvam-7474643766841203.aws.databricksapps.com/ *(Databricks Apps compute can idle-stop — give it a minute to spin up if it doesn't load immediately)*
 
 ---
 
-## 🎯 Vision
+## 🎯 Motivation
 
-Millions of rural users are entering the digital economy through UPI, but they face a dual crisis:
-- **Vulnerability**: Highly exposed to digital financial fraud with no real-time protection
-- **Exclusion**: Locked out of formal banking credit due to lack of traditional CIBIL scores
+Millions of rural users are entering the digital economy through UPI, but they face a dual problem:
+- **Vulnerability**: exposed to digital financial fraud with no real-time protection
+- **Exclusion**: locked out of formal credit due to lack of a traditional CIBIL score
 
-**Rakshak-Artha** bridges this gap with an enterprise-grade Lakehouse platform built entirely on Databricks, protecting users' wealth while leveraging their digital footprint to unlock micro-credit—all communicated in their native languages.
+Rakshak-Artha explores both sides on one Databricks-native stack: score transactions for fraud risk, score a user's payment behavior for credit eligibility, and let people ask questions about either in their own language.
 
 ---
 
 ## ⚙️ What It Does
 
-### **Rakshak (Fraud Monitor)** 🔒
-Intercepts live UPI transactions and detects anomalies in milliseconds using a hybrid XGBoost + Deep Q-Network (DQN) model. When fraud is blocked, a Sovereign AI agent sends the user an SMS explaining RBI protection guidelines in their native language.
+The app is a single Streamlit UI (`src/app/app.py`) with three tabs:
 
-### **Artha (Micro-Loan Evaluator)** 💳
-Analyzes the user's digital payment footprint (inflows, transaction velocity, bounce rates) to generate an alternative credit score and recommend micro-loan limits, enabling credit access for the unbanked.
+### 1. Fraud Detection
+A form for a UPI transaction (amount, type, category, device, time, sender/receiver profile). On submit, the app derives ~26 engineered features (odd-hour flag, amount-vs-sender-mean ratio, weekend/high-amount interactions, etc.) and scores them against an **XGBoost** model loaded from MLflow, returning a fraud probability and a Low/Medium/High risk band.
 
----
+### 2. Credit Eligibility
+A form for 12 banking-behavior signals (monthly inflow, transaction velocity, bounce rate, large/small/weekend/night transaction ratios, credit-debit ratio, active days). Scores them against a separately-trained MLflow model and returns an eligibility score with an Approved / Needs Review / Rejected verdict.
 
-## 🛠️ Technical Architecture
-
-### **Built Entirely on Databricks**
-
-We leverage Databricks' unified Lakehouse platform to power both real-time fraud detection and batch credit scoring:
-
-#### **Data Pipeline (PySpark)**
-- **Ingestion Layer**: Real-time and batch ingestion of transaction logs via Databricks Jobs
-- **Bronze Tables**: Raw transaction data from UPI feeds
-- **Silver Tables**: Cleaned, deduplicated data with explicit user-level isolation (no cross-contamination)
-- **Gold Tables**: Feature-engineered datasets optimized for ML:
-  - `fraud_anomaly_features` - Isolated for fraud detection
-  - `gold_user_credit_features` - Dedicated for credit scoring
-
-#### **ML Engines**
-Both models deployed as REST APIs on **Databricks Serverless Compute**:
-
-**1. Fraud Detection (Hybrid XGBoost + DQN)**
-- Real-time inference on live transactions
-- XGBoost for baseline anomaly scoring
-- DQN agent learns optimal blocking policies via Bellman updates:
-  - `Q(s, a) ← Q(s, a) + α[r + γ max_{a'} Q(s', a') - Q(s, a)]`
-- Model versioning and registry via **MLflow**
-
-**2. Credit Scoring (Banking Behavior Classifier)**
-- Transparent, Explainable AI (XAI) compliant model
-- Generates alternative credit scores from digital payment patterns
-- Batch inference on user cohorts
-- Versioned in MLflow, deployed as REST API
-
-#### **Vector Search & RAG (Sarvam-1 LLM)**
-- **Language Model**: Sarvam-1 (7B) via Hugging Face
-- **Quantization**: BitsAndBytes 8-bit (14GB → 3.5GB memory footprint)
-- **Vector Embeddings**: `paraphrase-multilingual-MiniLM-L12-v2`
-- **Vector Search**: FAISS-based retrieval over 11 RBI documents in 6 languages
-- **Orchestration**: RAG pipeline generates multilingual SMS explanations
-
-#### **Frontend**
-- **Streamlit App** hosted directly on Databricks Apps
-- Multi-tab interface for:
-  - Real-time fraud alerts and explanations
-  - Credit score dashboard
-  - Transaction history and patterns
+### 3. Multilingual AI Assistant
+A small RAG chatbot over **Sarvam-1** (7B), loaded 8-bit quantized (BitsAndBytes) so it fits in ~3.5GB instead of ~14GB. It embeds the question with a multilingual sentence-transformer (`paraphrase-multilingual-MiniLM-L12-v2`), retrieves the closest matches from a small in-app knowledge base about UPI and fraud detection, detects the question's language from its Unicode script (English, Hindi, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, Punjabi), and prompts Sarvam-1 to answer in that same language.
 
 ---
 
-## 🏗️ System Diagram: Rakshak-Artha Lakehouse Architecture
+## 🛠️ How It's Built
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        DATABRICKS LAKEHOUSE PLATFORM                       │
-│                                                                             │
-│  ┌──────────────────────────────────────────────────────────────────────┐  │
-│  │                          DATA INGESTION LAYER                        │  │
-│  │                                                                      │  │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │  │
-│  │  │   UPI    │  │  Payment │  │ Customer │  │  Historical Txns │   │  │
-│  │  │  Feeds   │  │  Streams │  │  Masters │  │  (Batch)         │   │  │
-│  │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────────────┘   │  │
-│  │       │             │             │             │                 │  │
-│  │       └─────────────┴─────────────┴─────────────┘                 │  │
-│  │                        │                                           │  │
-│  │                   PySpark Ingestion Job                            │  │
-│  └────────────────────────┼──────────────────────────────────────────┘  │
-│                           │                                             │
-│  ┌────────────────────────┴──────────────────────────────────────────┐  │
-│  │                  BRONZE LAYER (Raw Data)                          │  │
-│  │                                                                    │  │
-│  │  ┌──────────────────────────────────────────────────────────┐   │  │
-│  │  │  bronze_transactions, bronze_events, bronze_customers    │   │  │
-│  │  └──────────────┬───────────────────┬──────────────────────┘   │  │
-│  └─────────────────┼───────────────────┼──────────────────────────┘  │
-│                    │                   │                             │
-│  ┌─────────────────┴───────────────────┴──────────────────────────┐  │
-│  │              SILVER LAYER (Cleaned Data)                      │  │
-│  │                                                                │  │
-│  │  ┌─────────────────────────────────────┐                      │  │
-│  │  │  silver_transactions_dedup          │  (No duplicates)     │  │
-│  │  ├─────────────────────────────────────┤                      │  │
-│  │  │  silver_user_profiles               │  (Customer profiles) │  │
-│  │  ├─────────────────────────────────────┤                      │  │
-│  │  │  silver_fraud_candidates            │  (Suspicious txns)   │  │
-│  │  └─────────────────────────────────────┘                      │  │
-│  │                                                                │  │
-│  │  ⚡ Data Quality Checks: Row counts, nulls, schema validation  │  │
-│  └────────────┬──────────────────────────────┬───────────────────┘  │
-│               │                              │                      │
-│  ┌────────────┴────────────────┐  ┌─────────┴─────────────────────┐ │
-│  │   GOLD: FRAUD BRANCH        │  │   GOLD: CREDIT BRANCH        │ │
-│  │                             │  │                              │ │
-│  │  fraud_anomaly_features:    │  │  gold_user_credit_features:  │ │
-│  │  • User transaction history │  │  • Inflow patterns           │ │
-│  │  • Device fingerprints      │  │  • Transaction velocity      │ │
-│  │  • Merchant risk scores     │  │  • Bounce rate frequency     │ │
-│  │  • Geo-temporal patterns    │  │  • Account stability metrics │ │
-│  │  • Velocity indicators      │  │  • Spending consistency      │ │
-│  │  • Behavioral anomalies     │  │  • Credit worthiness signals │ │
-│  └────────┬────────────────────┘  └────────────┬──────────────────┘ │
-│           │                                    │                     │
-└───────────┼────────────────────────────────────┼─────────────────────┘
-            │                                    │
-      ┌─────┴────────┐                  ┌────────┴─────────┐
-      │              │                  │                 │
-┌─────▼─────┐  ┌────▼────────┐  ┌──────▼──────┐  ┌───────▼────────┐
-│ MLflow    │  │ MLflow      │  │  MLflow     │  │  Databricks    │
-│ Fraud     │  │ DQN Agent   │  │  Credit     │  │  Serverless    │
-│ Model     │  │ (Learning)  │  │  Classifier │  │  Compute       │
-│ Registry  │  │             │  │  Registry   │  │                │
-└──────┬────┘  └─────┬──────┘  └──────┬──────┘  └───────┬────────┘
-       │             │                │                 │
-       └─────────────┴────────────────┴─────────────────┘
-                     │
-      ┌──────────────┴──────────────┐
-      │                             │
-┌─────▼──────────┐        ┌────────▼────────┐
-│  REST APIs     │        │  Model Serving  │
-│ (Serverless)   │        │  (Databricks)   │
-│                │        │                 │
-│ GET /fraud     │        │  • Real-time    │
-│ GET /score     │        │    inference    │
-│ GET /explain   │        │  • Batch job    │
-└─────┬──────────┘        │    scoring      │
-      │                   └────────┬────────┘
-      │                            │
-      └────────────┬───────────────┘
-                   │
-      ┌────────────▼─────────────┐
-      │    SOVEREIGN AI (RAG)    │
-      │                          │
-      │  ┌────────────────────┐  │
-      │  │  Sarvam-1 (7B)     │  │
-      │  │  8-bit Quantized   │  │
-      │  │  3.5GB Memory      │  │
-      │  └─────────┬──────────┘  │
-      │            │             │
-      │  ┌─────────▼──────────┐  │
-      │  │ FAISS Vector Index │  │
-      │  │ (~470MB)           │  │
-      │  └─────────┬──────────┘  │
-      │            │             │
-      │  ┌─────────▼──────────┐  │
-      │  │  RBI Knowledge     │  │
-      │  │  Base (11 docs,    │  │
-      │  │  6 languages)      │  │
-      │  └─────────┬──────────┘  │
-      │            │             │
-      │  ┌─────────▼──────────┐  │
-      │  │  Multilingual SMS  │  │
-      │  │  Explanations      │  │
-      │  │  (10+ languages)   │  │
-      │  └────────────────────┘  │
-      └────────────┬─────────────┘
-                   │
-      ┌────────────▼────────────────┐
-      │  DATABRICKS APPS            │
-      │  (Streamlit Frontend)       │
-      │                             │
-      │  • Real-time alerts         │
-      │  • Credit dashboard         │
-      │  • Transaction explainer    │
-      │  • User dispute interface   │
-      └─────────────────────────────┘
-```
+### Data & training (`src/jobs/`)
+- **`data_gen.py`** — a PySpark job that generates 100k synthetic UPI-style transactions (amount, category, timestamp, a rule-based fraud label skewed by amount/category) and writes them to a Unity Catalog Delta table.
+- **`train.py`** — reads that table, trains an **XGBoost** classifier and registers it to Unity Catalog via MLflow. It then uses the XGBoost probability as part of the state for a custom Gym environment and trains a **DQN** agent (`stable-baselines3`) with a 3-action policy (Allow / Review / Block) and reward shaping (blocking real fraud is rewarded, allowing fraud is penalized heavily), logging it as an MLflow artifact. This is the "hybrid XGBoost + DQN" model referenced throughout the app — the DQN training job is included, but the live app currently scores transactions with XGBoost directly (see [Current Limitations](#-current-limitations-honest-scope)).
+- The credit-eligibility model is trained separately and loaded by MLflow run ID in the app; its training script isn't in this repo yet.
 
----
+### Serving (`src/app/`)
+`app.py` loads both models in-process via `mlflow.pyfunc.load_model("runs:/<run_id>/...")` and runs inference directly inside the Streamlit app — there's no separate model-serving call in the current UI.
 
-## 📊 Model Architecture & Specifications
+### Deployment — Databricks Asset Bundle
+The whole thing ships as a **Databricks Asset Bundle** (`databricks.yml`):
+- `resources/app.yml` — deploys the Streamlit app in `src/app/` as a Databricks App.
+- `resources/jobs.yml` — defines two jobs, `data_generation` and `model_training` (which depends on it), each running on its own job cluster.
 
-### **Memory Footprint Optimization**
-
-| Component | Original Size | Optimized | Technique |
-|-----------|---------------|-----------|-----------|
-| Fraud Model (XGBoost) | — | ~50MB | Tree pruning |
-| Credit Classifier | — | ~10MB | Quantization |
-| Embeddings (MiniLM) | ~500MB | ~470MB | Weight sharing |
-| Sarvam-1 LLM | 14GB | **3.5GB** | **BitsAndBytes 8-bit** |
-| **Total** | — | **~4GB** | — |
-
-### **Fraud Detection Pipeline**
-
-```
-Live Transaction
-        │
-        ▼
-┌──────────────────────────┐
-│  Anomaly Scorer (XGBoost) │ → Risk Score (0-1)
-└────────┬─────────────────┘
-         │
-    If Score > θ:
-         │
-         ▼
-┌──────────────────────────┐
-│  DQN Agent Evaluator     │
-│  (Bellman Update Loop)   │ → Block / Allow Decision
-│  Q-value: Expected Reward│
-└────────┬─────────────────┘
-         │
-    ┌────┴────┐
-    │          │
-    ▼          ▼
- BLOCK     ALLOW
-    │          │
-    │    ┌─────▼────────┐
-    │    │ Log Action & │
-    │    │ Update Q(s,a)│
-    │    └──────────────┘
-    │
-    ▼
-┌────────────────────────────┐
-│ Trigger Sovereign AI Agent │
-├────────────────────────────┤
-│ 1. Fetch RBI guidelines    │
-│ 2. Detect user language    │
-│ 3. Generate SMS via RAG    │
-│ 4. Send notification       │
-└────────────────────────────┘
-```
-
-### **Credit Scoring Pipeline**
-
-```
-User Payment Footprint
-(Silver Tables)
-        │
-        ▼
-┌──────────────────────────┐
-│ Feature Engineering      │
-│ (PySpark)                │
-│ • Velocity metrics       │
-│ • Stability signals      │
-│ • Inflow patterns        │
-└────────┬─────────────────┘
-         │
-         ▼
-┌──────────────────────────┐
-│ Banking Behavior         │
-│ Classifier (ML)          │
-│ (XAI-compliant)          │
-└────────┬─────────────────┘
-         │
-         ▼
-┌──────────────────────────┐
-│ Alternative Credit Score │
-│ + Explainability         │
-│ (Feature Attribution)    │
-└────────┬─────────────────┘
-         │
-         ▼
-┌──────────────────────────┐
-│ Micro-Loan Recommendation│
-│ • Loan amount limit      │
-│ • Interest rate band     │
-│ • Tenure suggestion      │
-└──────────────────────────┘
-```
-
----
-
-## 🚀 Deployment on Databricks
-
-### **Serverless Compute**
-- **REST API Serving**: XGBoost fraud model & credit classifier exposed as HTTP endpoints
-- **Auto-scaling**: Handles request spikes during peak UPI hours
-- **MLflow Integration**: Model versioning, A/B testing, and rollback capabilities
-
-### **Jobs & Workflows**
-- **Real-time Ingestion**: Kafka/Kinesis connectors for live transaction streams
-- **Batch Scoring**: Daily credit re-scoring of 10M+ users
-- **Model Retraining**: Weekly DQN updates with new fraud patterns
-
-### **Delta Lake**
-- **ACID Transactions**: Guarantee data consistency in fraud & credit tables
-- **Time Travel**: Audit trails for compliance (RBI audit logs)
-- **Unified Governance**: Unity Catalog for fine-grained access control
-
----
-
-## 🧠 AI/ML Highlights
-
-### **Fraud Detection (Hybrid Approach)**
-
-**Why XGBoost + DQN?**
-- **XGBoost**: Fast, interpretable baseline for immediate scoring
-- **DQN**: Learns optimal blocking thresholds by maximizing:
-  - `Reward = (Fraud Caught × Weight_f) - (False Positives × Weight_fp)`
-  - Adapts to evolving fraud patterns via Bellman equation
-
-**Real-time Inference**: Latency < 100ms per transaction
-
-### **Credit Scoring (Explainable AI)**
-
-**Features**:
-- **Inflow Stability**: Variance in monthly inflows (regularity = creditworthiness)
-- **Velocity**: Transaction frequency & amounts
-- **Bounce Rate**: Failed transaction percentage (low = reliability)
-- **Account Longevity**: Days of activity (tenure signal)
-
-**Why Explainable?**: Rural users deserve to understand *why* they were denied or approved. Feature attribution ensures transparency.
-
-### **Sovereign AI (Multilingual RAG)**
-
-**Sarvam-1 (7B) LLM** + **FAISS Vector Search**:
-- Queries indexed RBI protection guidelines (11 documents across 6 Indian languages)
-- Generates contextual SMS in the user's mother tongue
-- Explains: "Your transaction was blocked because [fraud reason]. Per RBI guidelines [guideline], you are protected."
-
-**Languages Supported**: English, Hindi, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Malayalam, Punjabi
-
----
-
-## 🔧 How We Built It
-
-### **Data Engineering Stack**
-```
-Databricks Workspace
-├── PySpark Jobs (Data ingestion)
-├── Delta Lake (Bronze → Silver → Gold)
-├── Unity Catalog (Governance)
-└── Workflows (Orchestration)
-```
-
-### **ML Engineering Stack**
-```
-Databricks ML
-├── MLflow (Model registry & versioning)
-├── Databricks Serverless Compute (Inference)
-├── XGBoost (Fraud baseline)
-├── TensorFlow (DQN training)
-└── HuggingFace (Sarvam-1)
-```
-
-### **Infrastructure Stack**
-```
-Databricks Platform
-├── Databricks Apps (Streamlit frontend)
-├── REST APIs (Model serving)
-├── Jobs (Batch processing)
-├── SQL Warehouse (Analytics)
-└── Repos (Version control)
-```
+### Testing
+`src/tests/test_endpoints.py` is a standalone script for smoke-testing Databricks **Model Serving** endpoints directly over HTTP (separately from the Streamlit app, which calls MLflow in-process rather than a serving endpoint).
 
 ---
 
@@ -376,7 +62,7 @@ databricks-hackathon/
 │   ├── app.yml              # Databricks App resource (Streamlit frontend)
 │   └── jobs.yml              # Jobs: synthetic data generation + model training
 └── src/
-    ├── app/                  # Streamlit frontend (Rakshak + Artha UI)
+    ├── app/                  # Streamlit frontend (fraud + credit + AI assistant tabs)
     │   ├── app.py
     │   ├── app.yaml
     │   └── requirements.txt
@@ -384,86 +70,65 @@ databricks-hackathon/
     │   ├── data_gen.py
     │   └── train.py
     └── tests/
-        └── test_endpoints.py # Manual test script for the model-serving endpoints
+        └── test_endpoints.py # Manual smoke test for the model-serving endpoints
 ```
 
 ---
 
-## 🚧 Challenges Overcome
+## 🧰 Tech Stack
 
-### **1. Massive LLM Footprints**
-**Problem**: Serving a 7B parameter LLM on standard compute is infeasible.
-
-**Solution**:
-- **BitsAndBytes 8-bit Quantization**: Reduced Sarvam-1 from 14GB → 3.5GB
-- **Accelerate Library**: Optimized GPU utilization
-- **Result**: Maintained multilingual accuracy with 4× memory savings
-
-### **2. Data Dimensionality & Multi-tenancy**
-**Problem**: Open-source dataset lacked explicit user-level credit mapping; risk of feature leakage.
-
-**Solution**:
-- **PySpark Multi-tenant Synthesis**: Generated synthetic rural user cohorts
-- **Branched Gold Tables**: Isolated `fraud_anomaly_features` from `gold_user_credit_features`
-- **Row-level Filtering**: Unity Catalog ensured no cross-contamination
-
-### **3. Real-time Fraud Detection Latency**
-**Problem**: DQN training is compute-intensive; inference must be <100ms.
-
-**Solution**:
-- **XGBoost as Baseline**: Fast scoring via tree ensemble
-- **DQN as Refinement**: Optional secondary filtering for high-uncertainty cases
-- **Serverless Compute**: Auto-scales during peak UPI traffic hours
+| Area | Tools |
+|---|---|
+| Data | PySpark, Delta Lake, Unity Catalog |
+| Fraud model | XGBoost |
+| Experimental decision layer | Deep Q-Network via `stable-baselines3` + `gymnasium` |
+| Model tracking/registry | MLflow |
+| LLM assistant | Sarvam-1 (7B) via Hugging Face `transformers`, 8-bit via BitsAndBytes, `accelerate` |
+| Retrieval | `sentence-transformers` (multilingual MiniLM), cosine similarity |
+| Frontend | Streamlit, deployed as a Databricks App |
+| Packaging | Databricks Asset Bundles (`databricks.yml`) |
 
 ---
 
-## 📈 Impact & Metrics
+## 🚀 Running It
 
-| Metric | Target | Status |
-|--------|--------|--------|
-| Fraud Detection Accuracy | >95% | ✅ |
-| False Positive Rate | <2% | ✅ |
-| Real-time Inference Latency | <100ms | ✅ |
-| Multilingual Coverage | 10+ languages | ✅ |
-| Credit Score Explainability | SHAP values | ✅ |
-| Model Serving Cost | Per-second billing | ✅ |
+**Deploy to Databricks** (requires the Databricks CLI configured with a workspace profile):
+```bash
+databricks bundle deploy -t dev
+databricks bundle run data_generation -t dev
+databricks bundle run model_training -t dev
+```
+This provisions the Streamlit app resource and runs the two jobs. Update the hardcoded `runs:/<run_id>/...` model URIs in `app.py` to point at the run IDs your `model_training` job produces, and register/point at your own credit-eligibility model similarly.
 
----
-
-## 🎯 What's Next
-
-### **Phase 2: Voice-Enabled Disputes**
-- Integrate **speech-to-text** directly into Sarvam-1 pipeline
-- Allow rural users to **dispute flagged transactions using audio notes** in 10+ regional languages
-- Auto-generate dispute tickets with transcription & translation
-
-### **Phase 3: Instant Micro-Loan Disbursement**
-- Connect **Artha** credit scoring engine to localized **micro-finance APIs**
-- Enable **instantaneous loan disbursement** post-approval
-- Real-time loan status tracking via SMS/App
-
-### **Phase 4: Ecosystem Integration**
-- Partner with NRLM (National Rural Livelihood Mission) for user acquisition
-- Integrate with **RBI Sandbox** for regulatory approval
-- Expansion to digital payment platforms beyond UPI (e-wallets, BNPL)
+**Run the UI locally** (after training/registering the models):
+```bash
+cd src/app
+pip install -r requirements.txt
+streamlit run app.py
+```
+Needs `mlflow.set_tracking_uri("databricks")` credentials available in the environment (e.g. `DATABRICKS_HOST` / `DATABRICKS_TOKEN`).
 
 ---
 
-## 💡 Why Databricks?
+## ⚠️ Current Limitations (honest scope)
 
-1. **Unified Lakehouse**: Single platform for data ingestion, ML training, and model serving
-2. **Serverless Compute**: Auto-scaling, pay-per-use pricing—ideal for variable demand
-3. **MLflow Integration**: Built-in model versioning, A/B testing, and monitoring
-4. **Delta Lake**: ACID transactions and governance—critical for fintech
-5. **Databricks Apps**: Deploy Streamlit frontends without separate infrastructure
-6. **SQL Warehouse**: Real-time analytics for fraud dashboards
-7. **Unity Catalog**: Fine-grained access control for sensitive payment data
+This is a hackathon build — a few things are simplified or aspirational rather than fully wired up:
+- **DQN isn't in the live scoring path yet.** It's trained in `train.py` and logged to MLflow, but `app.py` currently scores transactions with XGBoost alone.
+- **No medallion (bronze/silver/gold) pipeline yet.** `data_gen.py` writes one synthetic Delta table; there's no ingestion layer for real UPI feeds or a bronze→silver→gold structure yet.
+- **The AI assistant's knowledge base is a small in-app demo set** (~11 facts about UPI/fraud), not a full indexed corpus of RBI documents. Retrieval is plain cosine similarity over those entries — `faiss-cpu` is in `requirements.txt` for a real vector index, but isn't used yet.
+- **No SMS delivery.** The assistant's answers are shown in the Streamlit UI only.
+- **The credit-eligibility model's training code isn't in this repo** — the app loads it by MLflow run ID, but reproducing it from scratch isn't yet possible from this codebase.
 
 ---
 
-## 📝 License
+## 🎯 Roadmap
 
-No license has been chosen yet for this project.
+- Wire the trained DQN policy into `app.py`'s live fraud-scoring path
+- Replace the in-memory knowledge base with a FAISS index over real RBI guideline documents
+- Add a training job for the credit-eligibility model, matching the fraud pipeline
+- Real UPI-feed ingestion with a proper bronze → silver → gold Delta pipeline
+- SMS/notification delivery for fraud alerts and RAG explanations
+- Voice input for disputes (speech-to-text into the Sarvam-1 pipeline)
 
 ---
 
@@ -473,10 +138,7 @@ Abhiraj Kumar
 Harshith Jay Surya Ganji
 
 ---
-Link for production : https://digital-artha-sarvam-7474643766841203.aws.databricksapps.com/
 
+## 📝 License
 
-
----
-
-**Built with ❤️ for rural India's digital revolution.**
+No license has been chosen yet for this project.
